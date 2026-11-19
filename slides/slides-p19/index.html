@@ -147,9 +147,10 @@
       <span class="kicker">19.1 · Hash functions</span>
       <h2>Strings: use every character, in order</h2>
       <ul>
-        <li class="fragment">Read the string as a number in base 37. Digits: ASCII codes ('a' = 97).</li>
-        <li class="fragment">Like 123 = 1·100 + 2·10 + 3: the position of each digit counts.</li>
-        <li class="fragment"><strong>Horner's rule:</strong> left to right, h = 37·h + next char. No powers.</li>
+        <li class="fragment">Read the string as a number in base 37: "abc" = a·37² + b·37 + c.</li>
+        <li class="fragment">Each character is its ASCII code: 'a' = 97, 'b' = 98, 'c' = 99.</li>
+        <li class="fragment">Like 123 = 1·10² + 2·10 + 3: the position of each digit counts.</li>
+        <li class="fragment"><strong>Horner's rule:</strong> the same number, no powers: (a·37 + b)·37 + c.</li>
       </ul>
       <div class="fragment"><pre><code class="language-cpp" data-trim>
 unsigned int hashString(const std::string&amp; key, int tableSize) {
@@ -159,7 +160,10 @@ unsigned int hashString(const std::string&amp; key, int tableSize) {
     return h % tableSize;
 }
       </code></pre></div>
-      <p class="muted">Adding characters fails: "abc" = "cba". 37 is just a small prime (Java uses 31). Weiss, Fig. 5.4.</p>
+      <aside class="notes">
+        <p>Por qué no sumar los caracteres: "abc" y "cba" suman lo mismo (97 + 98 + 99), así que caen en la misma celda. En base 37 la posición cuenta y dan distinto.</p>
+        <p>El 37 no tiene nada especial: es un primo pequeño. Java usa 31. Código: Weiss (2014), Fig. 5.4.</p>
+      </aside>
     </section>
 
     <section>
@@ -381,6 +385,12 @@ unsigned int hashString(const std::string&amp; key, int tableSize) {
         <li class="fragment">Double hashing: the jump size comes from a second hash function.</li>
       </ul>
       <p class="muted">Weiss (2014), Fig. 5.11 and 5.13; § 5.4.2 and 5.4.3.</p>
+      <aside class="notes">
+        <p><strong>Double hashing.</strong> La segunda función hash se aplica a la <em>llave</em>, no al índice. h₁(x) da la casilla inicial y h₂(x) el tamaño del salto: h₁(x), h₁(x) + h₂(x), h₁(x) + 2·h₂(x), … (todo mod TableSize).</p>
+        <p>La función de Weiss: h₂(x) = R − (x mod R), con R un primo más chico que el tamaño de la tabla. Esta forma garantiza que el salto nunca sea 0, porque con salto 0 te quedarías probando la misma casilla para siempre.</p>
+        <p>Ejemplo (10 casillas, R = 7): 19 y 29 empiezan en 9, pero h₂(19) = 7 − 5 = 2 (camino 9, 1, 3, 5, …) y h₂(29) = 7 − 1 = 6 (camino 9, 5, 1, 7, …). Por eso elimina el secondary clustering. La tabla debe ser de tamaño primo.</p>
+        <p><strong>Secondary clustering.</strong> En quadratic probing, las llaves con la misma casilla inicial siguen exactamente el mismo camino (9, 19, 29, 39 con mod 10: 9 → 0 → 3 → 8). Es un problema menor: menos de medio intento extra por búsqueda (Weiss).</p>
+      </aside>
     </section>
 
     <section>
@@ -620,7 +630,7 @@ bool HashTable::remove(int x) {
       <span class="kicker">Checkpoint</span>
       <div class="quiz" data-correct="a">
         <p class="quiz-question">In the linear probing <code>HashTable</code>, <code>remove(x)</code> sets the cell to <em>EMPTY</em> instead of DELETED. What breaks?</p>
-        <button class="quiz-option" data-opt="a"><code>contains</code> can miss keys that probed past that cell.</button>
+        <button class="quiz-option" data-opt="a"><code>contains</code> may not find keys stored after that cell.</button>
         <button class="quiz-option" data-opt="b"><code>insert</code> stops working: it finds no empty cell.</button>
         <button class="quiz-option" data-opt="c">Nothing: the key is gone either way.</button>
         <div class="quiz-explain">
